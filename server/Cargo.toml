@@ -1,0 +1,18 @@
+[package]
+name = "simple-server"
+version = "0.1.0"
+authors = ["s-horii"]
+edition = "2018"
+
+[[bin]]
+name = "main"
+path = "src/bin/main.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+futures = "0.3"
+tokio = { version = "1.2", features = ["rt", "rt-multi-thread", "sync"] }
+types = { version = "0.1.0", path = "../types" }
+router = { path = "../router" }
+router-macros = { path = "../router-macros" }
