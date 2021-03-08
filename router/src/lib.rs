@@ -1,40 +1,34 @@
-#[macro_use]
-extern crate lazy_static;
 use std::collections::HashMap;
-use std::sync::Mutex;
 use types::{HttpMethod, HttpRequest, HttpResponse};
 
 pub type Api = Box<dyn (Fn(HttpRequest) -> HttpResponse) + Send + Sync>;
 
 #[derive(Hash, PartialEq, Eq)]
 pub struct RouteKey {
-    path: String,
-    method: HttpMethod,
+    pub path: String,
+    pub method: HttpMethod,
 }
 
-lazy_static! {
-    static ref ROUTE: Mutex<HashMap<RouteKey, Api>> = Mutex::new(HashMap::new());
+pub struct Router {
+    route_map: HashMap<RouteKey, Api>,
 }
-
-pub struct Route {}
-
-impl Route {
-    pub fn add_api(key: RouteKey, api: Api) {
-        let mut route_map = ROUTE.lock().unwrap();
-        route_map.insert(key, api);
-    }
-}
-
-pub struct Router {}
 
 impl Router {
-    pub fn dispatch(request: HttpRequest) -> HttpResponse {
+    pub fn new() -> Self {
+        let route_map: HashMap<RouteKey, Api> = HashMap::new();
+        Router { route_map }
+    }
+
+    pub fn add_api(&mut self, key: RouteKey, api: Api) {
+        self.route_map.insert(key, api);
+    }
+
+    pub fn dispatch(&self, request: HttpRequest) -> HttpResponse {
         let route_key = RouteKey {
             path: request.path.clone(),
             method: request.method.clone(),
         };
-        let route_map = ROUTE.lock().unwrap();
-        let func = route_map.get(&route_key);
+        let func = self.route_map.get(&route_key);
         match func {
             Some(f) => f(request),
             None => HttpResponse {

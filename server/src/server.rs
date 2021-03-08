@@ -7,7 +7,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 use std::thread;
-use tokio::{runtime::Runtime, sync::Semaphore};
+use tokio::runtime::Runtime;
 use types::{HttpRequest, HttpResponse};
 
 struct SharedState {
@@ -20,7 +20,7 @@ pub struct RequestHandler {
 }
 
 impl RequestHandler {
-    pub fn new(request: HttpRequest) -> Self {
+    pub fn new(router: Arc<Router>, request: HttpRequest) -> Self {
         let shared_state = Arc::new(Mutex::new(SharedState {
             response: None,
             waker: None,
@@ -28,7 +28,7 @@ impl RequestHandler {
 
         let thread_shared_state = shared_state.clone();
         thread::spawn(move || {
-            let resp = Router::dispatch(request);
+            let resp = router.dispatch(request);
             let mut shared_state = thread_shared_state.lock().unwrap();
             shared_state.response = Some(resp);
             if let Some(waker) = shared_state.waker.take() {
@@ -58,19 +58,16 @@ where
     A: ToSocketAddrs,
 {
     addr: A,
-    sem: Arc<Semaphore>,
+    router: Arc<Router>,
 }
 
 impl<A> Server<A>
 where
     A: ToSocketAddrs + Copy,
 {
-    pub fn new(addr: A, max: usize) -> Self {
-        let sem = Arc::new(Semaphore::new(max));
-        Server {
-            addr: addr,
-            sem: sem,
-        }
+    pub fn new(addr: A, router: Router) -> Self {
+        let router = Arc::new(router);
+        Server { addr, router }
     }
 
     pub fn serve_forever(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -78,13 +75,13 @@ where
         for stream in listener.incoming() {
             match stream {
                 Ok(mut stream) => {
-                    let s = Arc::clone(&self.sem);
+                    let thread_router = Arc::clone(&self.router);
                     let _ = thread::spawn(move || {
                         let rt = Runtime::new().unwrap();
                         rt.block_on(async {
-                            let permit = s.acquire().await;
-                            assert!(permit.is_err());
-                            let resp = RequestHandler::new(HttpRequest::from(&stream)).await;
+                            let resp =
+                                RequestHandler::new(thread_router, HttpRequest::from(&stream))
+                                    .await;
                             let string_resp: String = resp.into();
                             stream
                                 .write(string_resp.as_bytes())
