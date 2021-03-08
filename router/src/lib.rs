@@ -12,34 +12,16 @@ pub struct RouteKey {
     method: HttpMethod,
 }
 
-struct InnerRoute {
-    routes: HashMap<RouteKey, Api>,
-}
-
-impl InnerRoute {
-    fn new() -> InnerRoute {
-        let routes: HashMap<RouteKey, Api> = HashMap::new();
-        InnerRoute { routes }
-    }
-
-    fn add_api(&mut self, key: RouteKey, api: Api) {
-        self.routes.insert(key, api);
-    }
-
-    fn get_routes(&self) -> &HashMap<RouteKey, Api> {
-        &self.routes
-    }
-}
-
 lazy_static! {
-    static ref ROUTE: Mutex<InnerRoute> = Mutex::new(InnerRoute::new());
+    static ref ROUTE: Mutex<HashMap<RouteKey, Api>> = Mutex::new(HashMap::new());
 }
 
 pub struct Route {}
 
 impl Route {
     pub fn add_api(key: RouteKey, api: Api) {
-        ROUTE.lock().unwrap().add_api(key, api);
+        let mut route_map = ROUTE.lock().unwrap();
+        route_map.insert(key, api);
     }
 }
 
@@ -51,13 +33,14 @@ impl Router {
             path: request.path.clone(),
             method: request.method.clone(),
         };
-        let inner_route = ROUTE.lock().unwrap();
-        let func = inner_route.get_routes().get(&route_key);
+        let route_map = ROUTE.lock().unwrap();
+        let func = route_map.get(&route_key);
         match func {
             Some(f) => f(request),
             None => HttpResponse {
                 version: String::from("1.1"),
-                status: String::from("404"),
+                status_code: String::from("404"),
+                status_statement: String::from("Not Found"),
                 headers: String::from(""),
                 data: String::from(""),
             },

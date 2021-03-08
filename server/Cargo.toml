@@ -1,5 +1,5 @@
 [package]
-name = "simple-server"
+name = "server"
 version = "0.1.0"
 authors = ["s-horii"]
 edition = "2018"
@@ -15,4 +15,3 @@ futures = "0.3"
 tokio = { version = "1.2", features = ["rt", "rt-multi-thread", "sync"] }
 types = { version = "0.1.0", path = "../types" }
 router = { path = "../router" }
-router-macros = { path = "../router-macros" }

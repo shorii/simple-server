@@ -1,5 +1,7 @@
 use router::Router;
+use std::convert::Into;
 use std::future::Future;
+use std::io::Write;
 use std::net::{TcpListener, ToSocketAddrs};
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
@@ -51,7 +53,7 @@ impl Future for RequestHandler {
     }
 }
 
-struct Server<A>
+pub struct Server<A>
 where
     A: ToSocketAddrs,
 {
@@ -63,7 +65,7 @@ impl<A> Server<A>
 where
     A: ToSocketAddrs + Copy,
 {
-    fn new(addr: A, max: usize) -> Self {
+    pub fn new(addr: A, max: usize) -> Self {
         let sem = Arc::new(Semaphore::new(max));
         Server {
             addr: addr,
@@ -71,23 +73,26 @@ where
         }
     }
 
-    fn serve_forever(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn serve_forever(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let listener = TcpListener::bind(self.addr)?;
         for stream in listener.incoming() {
             match stream {
-                Ok(stream) => {
-                    // TODO stream to request
+                Ok(mut stream) => {
                     let s = Arc::clone(&self.sem);
-                    let join_handle = thread::spawn(move || {
+                    let _ = thread::spawn(move || {
                         let rt = Runtime::new().unwrap();
                         rt.block_on(async {
                             let permit = s.acquire().await;
                             assert!(permit.is_err());
-                            RequestHandler::new(HttpRequest {}).await
+                            let resp = RequestHandler::new(HttpRequest::from(&stream)).await;
+                            let string_resp: String = resp.into();
+                            stream
+                                .write(string_resp.as_bytes())
+                                .expect("Failed to return response");
                         });
                     });
                 }
-                Err(e) => {
+                Err(_) => {
                     println!("return err response");
                 }
             }

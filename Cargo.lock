@@ -7,6 +7,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
+name = "ctor"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8f45d9ad417bcef4817d614a501ab55cdd96a6fdb24f49aab89a54acfd66b19"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "examples"
+version = "0.1.0"
+dependencies = [
+ "ctor",
+ "router",
+ "server",
+ "types",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -186,21 +206,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "router-macros"
-version = "0.1.0"
-dependencies = [
- "quote",
- "router",
- "syn",
-]
-
-[[package]]
-name = "simple-server"
+name = "server"
 version = "0.1.0"
 dependencies = [
  "futures",
  "router",
- "router-macros",
  "tokio",
  "types",
 ]

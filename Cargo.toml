@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "server",
-    "router-macros",
     "router",
     "types",
+    "example",
 ]

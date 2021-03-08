@@ -1,0 +1,19 @@
+[package]
+name = "examples"
+version = "0.1.0"
+authors = ["s-horii"]
+edition = "2018"
+
+# If you copy one of the examples into a new project, you should be using
+# [dependencies] instead.
+[dev-dependencies]
+server = { path = "../server" }
+router = { path = "../router" }
+types = { path = "../types" }
+
+[dependencies]
+ctor = "0.1.19"
+
+[[example]]
+name = "api"
+path = "api.rs"
