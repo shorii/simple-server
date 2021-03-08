@@ -1,3 +1,5 @@
+// TODO improve entirely
+
 use std::convert::{From, Into};
 use std::io::BufRead;
 use std::io::BufReader;
